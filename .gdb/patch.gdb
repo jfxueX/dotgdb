@@ -13,36 +13,42 @@ define nop
     if ($argc == 1)
       if ($cpsr->t &1)
         # thumb
-        set *(short *) $arg0 = 0x46c0
+        #set *(short *) $arg0 = 0x46c0
+        write_uint16 $arg0 0x46c0
       else
         # arm
-        set *(int *) $arg0 = 0xe1a00000
+        #set *(int *) $arg0 = 0xe1a00000
+        write_uint32 $arg0 0xe1a00000
       end
     else
       set $addr = $arg0
       if ($cpsr->t & 1)
     	# thumb
-	while ($addr < $arg1)
-	  set *(short *) $addr = 0x46c0
-	  set $addr = $addr + 2
-	end
+	    while ($addr < $arg1)
+	      #set *(short *) $addr = 0x46c0
+          write_uint16 $addr 0x46c0
+	      set $addr = $addr + 2
+	    end
       else
-	# arm
-	while ($addr < $arg1)
-	  set *(int *) $addr = 0xe1a00000
-	  set $addr = $addr + 4
-	end
-      end			
+	    # arm
+	    while ($addr < $arg1)
+	      #set *(int *) $addr = 0xe1a00000
+          write_uint32 $addr 0xe1a00000
+	      set $addr = $addr + 4
+	    end
+      end
     end
   end
 
   if (($X86 == 1) || ($X86_64 == 1))
     if ($argc == 1)
-      set *(unsigned char *) $arg0 = 0x90
+      #set *(unsigned char *) $arg0 = 0x90
+      write_uint8 $arg0 0x90
     else
       set $addr = $arg0
       while ($addr < $arg1)
-	set *(unsigned char *) $addr = 0x90
+	#set *(unsigned char *) $addr = 0x90
+    write_uint8 $addr 0x90
 	set $addr = $addr + 1
       end
     end
@@ -61,11 +67,13 @@ define null
   end
 
   if ($argc == 1)
-    set *(unsigned char *) $arg0 = 0
+    #set *(unsigned char *) $arg0 = 0
+    write_uint8 $arg0 0
   else
     set $addr = $arg0
     while ($addr < $arg1)
-      set *(unsigned char *) $addr = 0
+      #set *(unsigned char *) $addr = 0
+      write_uint8 $addr 0
       set $addr = $addr + 1
     end
   end
@@ -83,15 +91,18 @@ define int3
     if $ARM == 1
       set $ORIGINAL_INT3 = *(unsigned int *) $arg0
       set $ORIGINAL_INT3ADDRESS = $arg0
-      set *(unsigned int*) $arg0 = 0xe7ffdefe
+      #set *(unsigned int*) $arg0 = 0xe7ffdefe
+      write_uint32 $arg0 0xe7ffdefe
     end
 
     if (($X86 == 1) || ($X86_64 == 1))
       # save original bytes and address
-      set $ORIGINAL_INT3 = *(unsigned char *) $arg0
+      #set $ORIGINAL_INT3 = *(unsigned char *) $arg0
+      write_uint8 $ORIGINAL_INT3 $arg0
       set $ORIGINAL_INT3ADDRESS = $arg0
       # patch
-      set *(unsigned char *) $arg0 = 0xCC
+      #set *(unsigned char *) $arg0 = 0xCC
+      write_uint8 $arg0 0xCC
     end
   end
 end
@@ -103,12 +114,14 @@ end
 
 define rint3
   if $ARM == 1
-    set *(unsigned int *) $ORIGINAL_INT3ADDRESS = $ORIGINAL_INT3
+    #set *(unsigned int *) $ORIGINAL_INT3ADDRESS = $ORIGINAL_INT3
+    write_uint32 $ORIGINAL_INT3ADDRESS $ORIGINAL_INT3
     set $pc = $ORIGINAL_INT3ADDRESS
   end
 
   if (($X86 == 1) || ($X86_64 == 1))
-    set *(unsigned char *) $ORIGINAL_INT3ADDRESS = $ORIGINAL_INT3
+    #set *(unsigned char *) $ORIGINAL_INT3ADDRESS = $ORIGINAL_INT3
+    write_uint8 $ORIGINAL_INT3ADDRESS $ORIGINAL_INT3
     if $64BITS == 1
       set $rip = $ORIGINAL_INT3ADDRESS
     else

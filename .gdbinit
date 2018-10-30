@@ -21,7 +21,7 @@ set $SHOWREGCHANGES = 1
 set $SKIPEXECUTE = 0
 # if $SKIPEXECUTE is 1 configure the type of execution
 # 1 = use stepo (do not get into calls), 0 = use stepi (step into calls)
-set $SKIPSTEP = 1
+set $SKIPSTEP = 0
 # show the ARM opcodes - change to 0 if you don't want such thing (in x/i command)
 set $ARMOPCODES = 1
 # x86 disassembly flavor: 0 for Intel, 1 for AT&T
@@ -60,6 +60,73 @@ if $COLOUREDPROMPT == 1
    	set prompt \001\033[31m\002gdb$ \001\033[0m\002
 end
 
+define make_uint8_pointer
+    set logging redirect on
+    x/1xb $arg1
+    set $arg0 = $_
+    #p/x $arg0
+    set logging redirect off
+end
+
+define make_uint32_pointer
+    set logging redirect on
+    x/1xw $arg1
+    set $arg0 = $_
+    #p/x $arg0
+    set logging redirect off
+end
+
+define derefer_uint8
+    set logging redirect on
+    x/1xb $arg1
+    set $arg0 = *$_
+    set logging redirect off
+end
+
+define derefer_uint16
+    set logging redirect on
+    x/1xh $arg1
+    set $arg0 = *$_
+    set logging redirect off
+end
+
+define derefer_uint32
+    set logging redirect on
+    x/1xw $arg1
+    set $arg0 = *$_
+    set logging redirect off
+end
+
+define write_uint8
+    set logging redirect on
+    x/1xb $arg0
+    p *$_ = $arg1
+    set logging redirect off
+end
+document write_uint8
+Usage: write_int8 ADDR byte
+end
+
+define write_uint16
+    set logging redirect on
+    x/1xb $arg0
+    p *$_ = $arg1
+    set logging redirect off
+end
+document write_uint16
+Usage: write_int16 ADDR byte
+end
+
+define write_uint32
+    set logging redirect on
+    x/1xb $arg0
+    p *$_ = $arg1
+    set logging redirect off
+end
+document write_uint32
+Usage: write_int32 ADDR byte
+end
+
 
 ###
 # Command files
@@ -77,7 +144,7 @@ source ~/.gdb/tracing.gdb
 source ~/.gdb/misc.gdb
 source ~/.gdb/info.gdb
 source ~/.gdb/tips.gdb
-source ~/.gdb/macsbug.gdb
+#source ~/.gdb/macsbug.gdb
 source ~/.gdb/carbon.gdb
 source ~/.gdb/profile.gdb
 
@@ -99,18 +166,27 @@ define hook-run
   # Attempt to detect the target in case gdb was started with the executable
   # as an argument.
   setup-detect-target
+
+  set logging overwrite on
+  set logging on
 end
 
 
 define hook-file
   # Attempt to detect the target again since a new binary has been loaded.
   setup-detect-target
+
+  set logging overwrite on
+  set logging on
 end
 
 
 define hook-core-file
   # Attempt to detect the target again since a new core has been loaded.
   setup-detect-target
+
+  set logging overwrite on
+  set logging on
 end
 
 

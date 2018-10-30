@@ -4,7 +4,8 @@ define ascii_char
     help ascii_char
   else
     # thanks elaine :)
-    set $_c = *(unsigned char *) ($arg0)
+    #set $_c = *(unsigned char *) ($arg0)
+    derefer_uint8 $_c $arg0
     if ($_c < 0x20 || $_c > 0x7E)
       printf "."
     else
@@ -23,11 +24,17 @@ define hex_quad
   if $argc != 1
     help hex_quad
   else
+    #printf "%02X %02X %02X %02X %02X %02X %02X %02X", \
+    #       *(unsigned char*) ($arg0), *(unsigned char*) ($arg0 + 1), \
+    #       *(unsigned char*) ($arg0 + 2), *(unsigned char*) ($arg0 + 3), \
+    #       *(unsigned char*) ($arg0 + 4), *(unsigned char*) ($arg0 + 5), \
+	#   *(unsigned char*) ($arg0 + 6), *(unsigned char*) ($arg0 + 7)
+    make_uint8_pointer $p_ $arg0
     printf "%02X %02X %02X %02X %02X %02X %02X %02X", \
-           *(unsigned char*) ($arg0), *(unsigned char*) ($arg0 + 1), \
-           *(unsigned char*) ($arg0 + 2), *(unsigned char*) ($arg0 + 3), \
-           *(unsigned char*) ($arg0 + 4), *(unsigned char*) ($arg0 + 5), \
-	   *(unsigned char*) ($arg0 + 6), *(unsigned char*) ($arg0 + 7)
+           *($p_ + 0), *($p_ + 1), \
+           *($p_ + 2), *($p_ + 3), \
+           *($p_ + 4), *($p_ + 5), \
+	       *($p_ + 6), *($p_ + 7)
   end
 end
 document hex_quad
@@ -96,12 +103,16 @@ end
 
 
 define search
-  set $start = (char *) $arg0
-  set $end = (char *) $arg1
+  #set $start = (char *) $arg0
+  #set $end = (char *) $arg1
+  make_uint8_pointer $start $arg0
+  make_uint8_pointer $end $arg1
   set $pattern = (short) $arg2
   set $p = $start
   while $p < $end
-    if (*(short *) $p) == $pattern
+    #if (*(short *) $p) == $pattern
+    derefer_uint16 $v_ $p
+    if $v_ == $pattern
       printf "pattern 0x%hx found at 0x%x\n", $pattern, $p
     end
     set $p++

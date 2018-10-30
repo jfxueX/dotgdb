@@ -128,7 +128,8 @@ end
 # FIXME: ARM
 define skip
   x/2i $pc
-  set $instruction_size = (int) ($_ - $pc)
+  #set $instruction_size = (int) ($_ - $pc)
+  set $instruction_size = int($_ - $pc)
   set $pc = $pc + $instruction_size
   if ($SKIPEXECUTE == 1)
     if ($SKIPSTEP == 1)

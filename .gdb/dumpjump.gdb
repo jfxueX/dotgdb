@@ -21,7 +21,10 @@ define dumpjump
     end
 
     if $_t_flag == 0
-      set $_lastbyte = *(unsigned char *)($pc+3)
+      #set $_lastbyte = *(unsigned char *)($pc+3)
+      #x/1xb ($pc+3)
+      #set $_lastbyte = *$_
+      derefer_uint8 $_lastbyte ($pc+3)
       #set $_bit31 = ($_lastbyte >> 7) & 1
       #set $_bit30 = ($_lastbyte >> 6) & 1
       #set $_bit29 = ($_lastbyte >> 5) & 1
@@ -31,8 +34,13 @@ define dumpjump
     else
       # if bits 15-12 (opcode in Thumb instructions) are equal to 1 1 0 1 (0xD) then we have a conditional branch
       # bits 11-8 for the conditional execution code (check ARMv7 manual A8.3)
-      if ((*(unsigned char *) ($pc + 1) >> 4) == 0xD)
-	set $_conditional = *(unsigned char *) ($pc+1) ^ 0xD0
+      #if ((*(unsigned char *) ($pc + 1) >> 4) == 0xD)
+	  #  set $_conditional = *(unsigned char *) ($pc+1) ^ 0xD0
+      #  dumpjumphelper
+      #end
+      make_uint8_pointer $p_ ($pc+1)
+      if (*$p_ >> 4) == 0xD)
+	    set $_conditional = *$p_ ^ 0xD0
         dumpjumphelper
       end
     end
@@ -40,8 +48,10 @@ define dumpjump
 
   if (($X86 == 1) || ($X86_64 == 1))
     ## grab the first two bytes from the instruction so we can determine the jump instruction
-    set $_byte1 = *(unsigned char *) $pc
-    set $_byte2 = *(unsigned char *) ($pc+1)
+    #set $_byte1 = *(unsigned char *) $pc
+    #set $_byte2 = *(unsigned char *) ($pc+1)
+    derefer_uint8 $_byte1 $pc
+    derefer_uint8 $_byte2 ($pc+1)
     ## and now check what kind of jump we have (in case it's a jump instruction)
     ## I changed the flags routine to save the flag into a variable, so we don't need to repeat the process :) (search for "define flags")
 

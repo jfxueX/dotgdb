@@ -7684,7 +7684,8 @@ end
 
 
 define hexdump
-	set $kgm_addr = (unsigned char *)$arg0
+	#set $kgm_addr = (unsigned char *)$arg0
+    derefer_uint8 $kgm_addr $arg0
 	set $kgm_len = $arg1
 	while $kgm_len > 0
 		showptr $kgm_addr
@@ -7718,16 +7719,16 @@ end
 
 
 define printcolonhex
-    if ($argc == 2) 
+    if ($argc == 2)
 	set $addr = $arg0
 	set $count = $arg1
 	set $li = 0
 	while ($li < $count)
 	    if ($li == 0)
-			printf "%02x", (u_char)$addr[$li]
+            printf "%02x", (u_char)$addr[$li]
 	    end
 	    if ($li != 0)
-			printf ":%02x", (u_char)$addr[$li]
+            printf ":%02x", (u_char)$addr[$li]
 	    end
 	    set $li = $li + 1
 	end
@@ -7737,15 +7738,15 @@ end
 define showsockaddr_dl
     set $sdl = (struct sockaddr_dl *)$arg0
     if ($sdl == 0)
-		printf "(null)           "
+        printf "(null)           "
     else
 	    if $sdl->sdl_nlen == 0 && $sdl->sdl_alen == 0 && $sdl->sdl_slen == 0
     		printf "link#%3d         ", $sdl->sdl_index
 	    else
-			set $addr = $sdl->sdl_data + $sdl->sdl_nlen
-			set $count = $sdl->sdl_alen
-			printcolonhex $addr $count
-		end
+            set $addr = $sdl->sdl_data + $sdl->sdl_nlen
+    		set $count = $sdl->sdl_alen
+    		printcolonhex $addr $count
+	    end
     end
 end
 

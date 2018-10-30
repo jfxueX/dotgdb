@@ -28,7 +28,9 @@ set $oldesp = 0
 
 define flagsx86
   # OF (overflow) flag
-  if (($eflags >> 0xB) & 1)
+  set $eflags_ = int($eflags)
+
+  if (($eflags_ >> 0xB) & 1)
     printf "O "
     set $_of_flag = 1
   else
@@ -36,25 +38,25 @@ define flagsx86
     set $_of_flag = 0
   end
   # DF (direction) flag
-  if (($eflags >> 0xA) & 1)
+  if (($eflags_ >> 0xA) & 1)
     printf "D "
   else
     printf "d "
   end
   # IF (interrupt enable) flag
-  if (($eflags >> 9) & 1)
+  if (($eflags_ >> 9) & 1)
     printf "I "
   else
     printf "i "
   end
   # TF (trap) flag
-  if (($eflags >> 8) & 1)
+  if (($eflags_ >> 8) & 1)
     printf "T "
   else
     printf "t "
   end
   # SF (sign) flag
-  if (($eflags >> 7) & 1)
+  if (($eflags_ >> 7) & 1)
     printf "S "
     set $_sf_flag = 1
   else
@@ -62,7 +64,7 @@ define flagsx86
     set $_sf_flag = 0
   end
   # ZF (zero) flag
-  if (($eflags >> 6) & 1)
+  if (($eflags_ >> 6) & 1)
     printf "Z "
     set $_zf_flag = 1
   else
@@ -70,13 +72,13 @@ define flagsx86
     set $_zf_flag = 0
   end
   # AF (adjust) flag
-  if (($eflags >> 4) & 1)
+  if (($eflags_ >> 4) & 1)
     printf "A "
   else
     printf "a "
   end
   # PF (parity) flag
-  if (($eflags >> 2) & 1)
+  if (($eflags_ >> 2) & 1)
     printf "P "
     set $_pf_flag = 1
   else
@@ -84,7 +86,7 @@ define flagsx86
     set $_pf_flag = 0
   end
   # CF (carry) flag
-  if ($eflags & 1)
+  if ($eflags_ & 1)
     printf "C "
     set $_cf_flag = 1
   else
@@ -99,18 +101,19 @@ end
 
 
 define eflagsx86
+  set $eflags_ = int($eflags)
   printf "     OF <%d>  DF <%d>  IF <%d>  TF <%d>", \
-         (($eflags >> 0xB) & 1), (($eflags >> 0xA) & 1), \
-         (($eflags >> 9) & 1), (($eflags >> 8) & 1)
+         (($eflags_ >> 0xB) & 1), (($eflags_ >> 0xA) & 1), \
+         (($eflags_ >> 9) & 1), (($eflags_ >> 8) & 1)
   printf "  SF <%d>  ZF <%d>  AF <%d>  PF <%d>  CF <%d>\n", \
-         (($eflags >> 7) & 1), (($eflags >> 6) & 1), \
-         (($eflags >> 4) & 1), (($eflags >> 2) & 1), ($eflags & 1)
+         (($eflags_ >> 7) & 1), (($eflags_ >> 6) & 1), \
+         (($eflags_ >> 4) & 1), (($eflags_ >> 2) & 1), ($eflags_ & 1)
   printf "     ID <%d>  VIP <%d> VIF <%d> AC <%d>", \
-         (($eflags >> 0x15) & 1), (($eflags >> 0x14) & 1), \
-         (($eflags >> 0x13) & 1), (($eflags >> 0x12) & 1)
+         (($eflags_ >> 0x15) & 1), (($eflags_ >> 0x14) & 1), \
+         (($eflags_ >> 0x13) & 1), (($eflags_ >> 0x12) & 1)
   printf "  VM <%d>  RF <%d>  NT <%d>  IOPL <%d>\n", \
-         (($eflags >> 0x11) & 1), (($eflags >> 0x10) & 1), \
-         (($eflags >> 0xE) & 1), (($eflags >> 0xC) & 3)
+         (($eflags_ >> 0x11) & 1), (($eflags_ >> 0x10) & 1), \
+         (($eflags_ >> 0xE) & 1), (($eflags_ >> 0xC) & 3)
 end
 document eflagsx86
 Auxillary function to print X86/X64 eflags register.
@@ -742,9 +745,18 @@ define stepoframeworkx86
   ## we know that an opcode starting by 0xE8 has a fixed length
   ## for the 0xFF opcodes, we can enumerate what is possible to have
   # first we grab the first 3 bytes from the current program counter
-  set $_byte1 = *(unsigned char *) $pc
-  set $_byte2 = *(unsigned char *) ($pc+1)
-  set $_byte3 = *(unsigned char *) ($pc+2)
+#  set $_byte1 = *(unsigned char *) $pc
+#  set $_byte2 = *(unsigned char *) ($pc+1)
+#  set $_byte3 = *(unsigned char *) ($pc+2)
+  #x/1bx $pc
+  #set $_byte1 = *$_
+  #x/1bx ($pc+1)
+  #set $_byte2 = *$_
+  #x/1bx ($pc+2)
+  #set $_byte3 = *$_
+  derefer_uint8 $_byte1 $pc
+  derefer_uint8 $_byte2 ($pc+1)
+  derefer_uint8 $_byte3 ($pc+2)
   # and start the fun
   # if it's a 0xE8 opcode, the total instruction size will be 5 bytes
   # so we can simply calculate the next address and use a temporary breakpoint ! Voila :)
@@ -794,12 +806,14 @@ end
 
 
 define cfcx86
+  set $eflags_ = int($eflags)
   # Carry/Borrow/Extend (C), bit 29
-  if ($eflags & 1)
-    set $eflags = $eflags & ~0x1
+  if ($eflags_ & 1)
+    set $eflags_ = $eflags_ & ~0x1
   else
-    set $eflags = $eflags | 0x1
+    set $eflags_ = $eflags_ | 0x1
   end
+  set $eflags = $eflags_
 end
 document cfcx86
 Auxiliary function to change x86 Carry Flag.
@@ -807,12 +821,14 @@ end
 
 
 define cfzx86
+  set $eflags_ = int($eflags)
   # zero (Z), bit 30
-  if (($eflags >> 6) & 1)
-    set $eflags = $eflags & ~0x40
+  if (($eflags_ >> 6) & 1)
+    set $eflags_ = $eflags_ & ~0x40
   else
-    set $eflags = $eflags | 0x40
+    set $eflags_ = $eflags_ | 0x40
   end
+  set $eflags = $eflags_
 end
 document cfzx86
 Auxiliary function to change x86 Zero Flag.

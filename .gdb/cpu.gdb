@@ -95,10 +95,10 @@ end
 
 
 define cfp
-  if (($eflags >> 2) & 1)
-    set $eflags = $eflags & ~0x4
+  if (($eflags_ >> 2) & 1)
+    set $eflags_ = $eflags_ & ~0x4
   else
-    set $eflags = $eflags | 0x4
+    set $eflags_ = $eflags_ | 0x4
   end
 end
 document cfp
@@ -107,10 +107,10 @@ end
 
 
 define cfa
-  if (($eflags >> 4) & 1)
-    set $eflags = $eflags & ~0x10
+  if (($eflags_ >> 4) & 1)
+    set $eflags_ = $eflags_ & ~0x10
   else
-    set $eflags = $eflags | 0x10
+    set $eflags_ = $eflags_ | 0x10
   end
 end
 document cfa
@@ -134,11 +134,13 @@ end
 
 
 define cfs
-  if (($eflags >> 7) & 1)
-    set $eflags = $eflags & ~0x80
+  set $eflags_ = int($eflags)
+  if (($eflags_ >> 7) & 1)
+    set $eflags_ = $eflags_ & ~0x80
   else
-    set $eflags = $eflags | 0x80
+    set $eflags_ = $eflags_ | 0x80
   end
+  set $eflags = $eflags_
 end
 document cfs
 Change Sign Flag.
@@ -146,11 +148,13 @@ end
 
 
 define cft
-  if (($eflags >> 8) & 1)
-    set $eflags = $eflags & ~0x100
+  set $eflags_ = int($eflags)
+  if (($eflags_ >> 8) & 1)
+    set $eflags_ = $eflags_ & ~0x100
   else
-    set $eflags = $eflags | 0x100
+    set $eflags_ = $eflags_ | 0x100
   end
+  set $eflags = $eflags_
 end
 document cft
 Change Trap Flag.
@@ -158,11 +162,13 @@ end
 
 
 define cfi
-  if (($eflags >> 9) & 1)
-    set $eflags = $eflags & ~0x200
+  set $eflags_ = int($eflags)
+  if (($eflags_ >> 9) & 1)
+    set $eflags_ = $eflags_ & ~0x200
   else
-    set $eflags = $eflags | 0x200
+    set $eflags_ = $eflags_ | 0x200
   end
+  set $eflags = $eflags_
 end
 document cfi
 Change Interrupt Flag.
@@ -172,11 +178,13 @@ end
 
 
 define cfd
-  if (($eflags >> 0xA) & 1)
-    set $eflags = $eflags & ~0x400
+  set $eflags_ = int($eflags)
+  if (($eflags_ >> 0xA) & 1)
+    set $eflags_ = $eflags_ & ~0x400
   else
-    set $eflags = $eflags | 0x400
+    set $eflags_ = $eflags_ | 0x400
   end
+  set $eflags = $eflags_
 end
 document cfd
 Change Direction Flag.
@@ -184,11 +192,13 @@ end
 
 
 define cfo
-  if (($eflags >> 0xB) & 1)
-    set $eflags = $eflags & ~0x800
+  set $eflags_ = int($eflags)
+  if (($eflags_ >> 0xB) & 1)
+    set $eflags_ = $eflags_ & ~0x800
   else
-    set $eflags = $eflags | 0x800
+    set $eflags_ = $eflags_ | 0x800
   end
+  set $eflags = $eflags_
 end
 document cfo
 Change Overflow Flag.
@@ -245,7 +255,8 @@ define get_insn_type
     help get_insn_type
   else
     set $INSN_TYPE = 0
-    set $_byte1 = *(unsigned char *) $arg0
+    #set $_byte1 = *(unsigned char *) $arg0
+    derefer_uint8 $_byte1 $arg0
     if ($_byte1 == 0x9A || $_byte1 == 0xE8)
       # "call"
       set $INSN_TYPE = 3
@@ -273,7 +284,8 @@ define get_insn_type
     end
     if ($_byte1 == 0x0F)
       # two-byte opcode
-      set $_byte2 = *(unsigned char *) ($arg0 + 1)
+      #set $_byte2 = *(unsigned char *) ($arg0 + 1)
+      derefer_uint8 $_byte2 ($arg0+1)
       if ($_byte2 >= 0x80 && $_byte2 <= 0x8F)
         # "jcc"
         set $INSN_TYPE = 2
@@ -281,7 +293,8 @@ define get_insn_type
     end
     if ($_byte1 == 0xFF)
       # opcode extension
-      set $_byte2 = *(unsigned char *) ($arg0 + 1)
+      #set $_byte2 = *(unsigned char *) ($arg0 + 1)
+      derefer_uint8 $_byte2 ($arg0+1)
       set $_opext = ($_byte2 & 0x38)
       if ($_opext == 0x10 || $_opext == 0x18)
         # "call"
@@ -369,8 +382,14 @@ define context
     # What a piece of crap that's going on here :)
     # detect if it's the correct opcode we are searching for
     if (($X86 == 1) || ($X86_64 == 1))
-      set $__byte1 = *(unsigned char *) $pc
-      set $__byte = *(int *) $pc
+      #set $__byte1 = *(unsigned char *) $pc
+      #set $__byte = *(int *) $pc
+      #x/1xb $pc
+      #set $__byte1 = *$_
+      #x/1xd $pc
+      #set $__byte = *$_
+      derefer_uint8 $__byte1 $pc
+      derefer_uint32 $__byte $pc
       if ($__byte == 0x4244489)
         set $objectivec = $eax
       	set $displayobjectivec = 1
@@ -434,7 +453,7 @@ define context
     echo \033[34m\033[1m
     printf "[code]\n"
     echo \033[0m
-    if ($SETCOLOUR1STLINE == 1)	
+    if ($SETCOLOUR1STLINE == 1)
       echo \033[32m
       x /i $pc
       echo \033[0m
